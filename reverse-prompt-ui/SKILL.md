@@ -38,6 +38,14 @@ the layout tree, and **exact tokens** — colors *with opacity*, radii, type (fa
 padding/gaps. Also read any variable/style definitions. Capture effects and gradient fills by reading the
 node that actually owns them (see `references/figma-plugin-api.md` → "Whose fill is it?").
 
+**Check EFFECTIVE visibility, not just `node.visible`.** A node can be `visible: true` yet not render
+because an *ancestor* is `visible: false` (e.g. an `actions` frame is hidden on one card, but its badge
+text nodes are still `visible: true`). If you traverse for text/icons naively you'll extract — and then
+render — elements the design hides. Compute effective visibility as `AND` of the node's and every
+ancestor's `visible`, and skip anything effectively hidden. Cross-check against the screenshot: if the
+screenshot doesn't show it, don't build it. (Two instances of the "same" component often differ only by
+which sublayers are toggled off — inspect each, don't assume they're identical.)
+
 ### 2. Clean & extract assets
 Get every icon/logo/illustration as an import-ready SVG, then simplify. Details and the exportAsync
 fallback are in **`references/asset-extraction.md`** — read it before pulling assets. In short: strip CSS

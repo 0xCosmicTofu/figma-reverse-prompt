@@ -21,6 +21,19 @@ Two sources, in order of preference:
    **Batch it: ≤6 nodes per `figma_execute` call** — a single call exporting ~17 icons times out (~30s).
    Bonus: `exportAsync` output already has real hex (no CSS `var()`), so it needs less cleaning.
 
+   **Export gotchas:**
+   - `getNodeByIdAsync` **cannot resolve instance-internal IDs** (the `I<id>;<id>;…` form for sublayers of
+     an instance) — it returns `null`. Traverse from a stable ancestor to get the node *reference*, and call
+     `.exportAsync()` on that reference (don't round-trip through the composite ID).
+   - **Hidden component variants won't export** → `"Failed to export node. This node may not have any
+     visible layers."` Token/brand components often carry hidden states. Export a *visible* instance, or
+     recreate the mark (e.g. reuse a logo you already have as a placeholder — the source is often a
+     placeholder too).
+   - **Stale bridge:** if heavy ops (`exportAsync`, `fillGeometry`/`strokeGeometry`) keep dropping the
+     connection while trivial reads succeed, the websocket may have gone stale (e.g. left open overnight).
+     Ask the user to **reload the Figma file + restart the bridge** before assuming your node IDs or
+     approach are wrong. Reloading regenerates instance-internal IDs, so re-resolve them by traversal.
+
 ## Cleaning
 
 - **Strip CSS variables → hardcoded hex.** Figma's SVG importer chokes on `fill="var(--fill-0, #0017AF)"`

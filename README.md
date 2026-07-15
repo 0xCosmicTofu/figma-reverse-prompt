@@ -25,8 +25,8 @@ The skill lives in the [`reverse-prompt-ui/`](reverse-prompt-ui/) folder.
 
 **Claude Code** — copy it into your skills directory:
 ```bash
-git clone https://github.com/<you>/reverse-prompt-ui.git
-cp -r reverse-prompt-ui/reverse-prompt-ui ~/.claude/skills/
+git clone https://github.com/0xCosmicTofu/figma-reverse-prompt.git
+cp -r figma-reverse-prompt/reverse-prompt-ui ~/.claude/skills/
 ```
 (or into a project's `.claude/skills/`). It then triggers automatically, or via `/reverse-prompt-ui`.
 

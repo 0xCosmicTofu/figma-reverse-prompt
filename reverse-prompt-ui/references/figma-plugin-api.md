@@ -25,6 +25,14 @@ real build.
 4. **Bottom-anchor a group:** `layoutGrow:1` + `primaryAxisAlignItems:"MAX"` inside a FIXED-height
    parent (e.g. sidebar footer nav, or a spacer that pushes a tab bar down).
 
+4a. **`SPACE_BETWEEN` needs a FILL-width row to do anything.** A row that HUGS its content has no slack to
+    distribute, so items bunch to the left even with `primaryAxisAlignItems:"SPACE_BETWEEN"`. Set the row's
+    `layoutSizingHorizontal:"FILL"` so it spans its parent — then space-between actually pushes items to the
+    edges (label ⟷ pills, tag ⟷ amount, `--` ⟷ `--`). Easy to miss and a very visible fidelity bug.
+
+4b. **Don't hand-truncate inlined asset paths to fit a build call.** A shortened SVG path renders as a
+    malformed blob (e.g. a coin becomes a gradient smear). Inline the full asset, or clone the source node.
+
 ## Fills & effects — what writes and what doesn't
 
 5. **`PATTERN` fills and `NOISE` effects can be READ but not WRITTEN** by (at least) the figma-console
