@@ -41,7 +41,42 @@ const node = figma.createNodeFromSvg(svg); node.resize(24, 24);
 
 **Other sets** if the shapes clearly aren't Phosphor: Lucide/Feather (thin, rounded, 24-unit), Heroicons
 (Tailwind projects), Material Symbols, Radix. Same pattern: fetch the real file, hardcode the colour,
-resize. **Brand logos** (tokens, companies) — fetch the official SVG; never trace.
+resize.
+
+## Brand logos from a screenshot
+
+Recovering *brand* marks (companies, tokens) from pixels is the thing mode C looks impossible for. It
+isn't — three fetchable registries cover essentially everything. Try in this order:
+
+```
+svgl            raw.githubusercontent.com/pheralb/svgl/main/static/library/<slug>.svg    full colour
+vectorlogo.zone www.vectorlogo.zone/logos/<b>/<b>-icon.svg                               full colour
+simple-icons    raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/<slug>.svg  MONOchrome
+```
+**simple-icons is a last resort** — it's monochrome-only *and* has **removed** several major marks over
+trademark requests (Slack, OpenAI, Salesforce, HubSpot are all gone). Measured on a real 12-logo
+dashboard: 11/12 came back as real full-colour marks; only one was monochrome-only.
+
+**Never trace a logo.** But "fetch the official SVG" is necessary, **not sufficient** — registry logos are
+built for the *web*, where `currentColor`, CSS classes, and SVG filters all work. **Figma's importer
+resolves none of them.** Budget a **normalization pass** on every logo; all of these are real, observed
+failures:
+
+- **Wrong variant.** Many registries ship the *white-on-dark* version (`fill="#ffff"`) → invisible on a
+  light tile. Check the variant against the tile colour you're placing it on.
+- **Filters / masks.** `<mask>` + `feGaussianBlur` (e.g. Google's marks) are **dropped** by the importer
+  and the logo renders wrong. Flatten to the plain path(s).
+- **Wordmark lockups.** svgl often ships `icon + wordmark` (a 999×699 box). At ~20px it reads as a squished
+  smudge. Drop the wordmark paths, keep the mark.
+- **`viewBox` crops.** A wordmark SVG whose `viewBox` crops to the icon works — **but** the icon may be a
+  **subpath at the tail of a glyph path**, not its own `<path>`. A path-level regex then silently matches
+  nothing. Extract the subpath.
+- **XML prologs, editor comments, `<style>` classes.** Illustrator exports carry all three; the importer
+  wants a bare `<svg>` with inline fills. Strip the prolog, inline the class fill.
+- **No `fill` at all.** simple-icons marks inherit `currentColor` → they land black unless tinted.
+
+**Assert before you inline:** every asset should start with `<svg` and contain no `currentColor` / `var(`.
+A three-line check catches most of the above before it reaches the build.
 
 ## From a live URL (mode B)
 
@@ -131,9 +166,11 @@ native pattern, and give the native params too so a capable target can do it pro
 
 ## Inlining into PROMPT.md — and saving the asset files cheaply
 
-Inline each asset in an `ASSET LIBRARY` section as a fenced ```svg block. To also populate the project's
-`assets/` folder **without re-transcribing** (which costs tokens twice), write the PROMPT first, then
-parse the SVGs back out of it with a small script:
+Inline each asset in an `ASSET LIBRARY` section as a fenced ```svg block. The rule is **transcribe each
+asset exactly once**; which direction you go depends on where the assets came from.
+
+**Assets came from Figma (mode A/B)** → write the PROMPT first, then parse the SVGs back out of it into
+`assets/` with a small script:
 ```python
 import re
 md = open("PROMPT.md").read()
@@ -141,6 +178,17 @@ for m in re.finditer(r'\*\*([a-z_]+)\*\*[^\n]*\n```svg\n(<svg.*?</svg>)\n```', m
     open(f"assets/icons/{m.group(1)}.svg","w").write(m.group(2))
 ```
 So each asset is transcribed exactly once (into the PROMPT), then extracted to files for free.
+
+**Assets came from a library/registry (mode C)** → **invert it.** The files already exist on disk from the
+fetch, so hand-write the spec sections and have a script **append** the ASSET LIBRARY *from* `assets/`:
+```python
+out = []
+for n in ICONS:
+    out.append(f"**{n}**\n```svg\n{open(f'assets/icons/{n}.svg').read().strip()}\n```\n")
+open("PROMPT.md","a").write("\n".join(out))
+```
+Same principle, opposite direction — and it means your normalization fixes (see "Brand logos" above) live
+in the files *and* the prompt, rather than only in the build call where they'd be lost.
 
 ## Fonts
 
