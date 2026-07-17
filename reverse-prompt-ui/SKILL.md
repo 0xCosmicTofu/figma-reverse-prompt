@@ -24,19 +24,52 @@ subfolder. If the hub has a top-level `README.md`, read it first (it holds the r
 any accumulated learnings), and register the new screen there when done.
 
 ## Prerequisites (state these if missing, don't silently fail)
-- A **write-capable Figma MCP** — one that runs plugin code (`figma_execute` / `exportAsync`), e.g.
-  figma-console. The official Figma Dev-Mode MCP is read-only and cannot build.
+- To **build/test** (any mode): a **write-capable Figma MCP** — one that runs plugin code
+  (`figma_execute` / `exportAsync`), e.g. figma-console. The official Figma Dev-Mode MCP is read-only.
+- To **extract**: depends on the source — a Figma MCP (mode A), a browser (mode B), or just vision (mode C).
 - Fonts the design uses must be **installed in the target Figma**, or note the substitution.
 
 ## The method
 
 Work through these in order. Steps 1–3 produce the deliverable; 4–5 verify and file it.
 
-### 1. Extract
-Pull the source: `get_design_context` + a screenshot on the frame and its key sub-frames; note node IDs,
-the layout tree, and **exact tokens** — colors *with opacity*, radii, type (family/size/weight/spacing),
-padding/gaps. Also read any variable/style definitions. Capture effects and gradient fills by reading the
-node that actually owns them (see `references/figma-plugin-api.md` → "Whose fill is it?").
+### 1. Extract — pick the mode that matches the source
+
+Whatever the mode, you're after the same things: the **layout tree** and **exact tokens** (colors *with
+opacity*, radii, type family/size/weight/spacing, padding/gaps), plus **import-ready assets**. What
+differs is how much is *measured* vs *inferred* — be honest about that in the prompt's `## Requires` and
+in `NOTES.md`.
+
+| Mode | Source | Fidelity | Tokens | Assets |
+|---|---|---|---|---|
+| **A. Figma** | a node/frame | **1:1** | exact (incl. variables) | real vectors via `exportAsync` |
+| **B. Live URL** | a shipped site/app | **near-1:1** | exact (computed CSS) | real SVGs from the DOM |
+| **C. Image** | screenshot / flat PNG | **approximation** | sampled/estimated | matched from an icon library |
+
+**A — Figma (best).** `get_design_context` + a screenshot on the frame and its key sub-frames; note node
+IDs, the layout tree, and exact tokens. Read variable/style definitions. Capture effects and gradient
+fills by reading the node that actually owns them (`references/figma-plugin-api.md` → "Whose fill is
+it?").
+
+**B — Live URL (underrated).** Open it in a browser and read the *computed* values — this is nearly as
+good as Figma and needs no file. `getComputedStyle` on the key elements gives exact colors, font family/
+size/weight, padding, gaps, radii, shadows; `getBoundingClientRect` gives real geometry. Pull **inline
+SVGs straight out of the DOM** (`outerHTML`) — those are real vectors, no tracing. Screenshot for
+reference. Prefer this over mode C whenever the design exists at a URL.
+
+**C — Image / screenshot (approximation — say so).** You can still produce a well-structured, close
+rebuild, but be upfront that it isn't 1:1:
+- **Colors:** sample pixels (script the eyedrop rather than guessing by eye). Flat fills read reliably;
+  gradients, opacity, and antialiased edges are estimates.
+- **Geometry:** measure against a known anchor (a 44px button, a 16/24px icon, the frame width) and
+  derive the spacing scale — real UIs snap to 4/8, so round to the scale rather than reporting 13px.
+- **Type:** identify the family by eye and treat it as an **assumption** — name your best guess in
+  `## Requires` and say it's inferred.
+- **Icons:** do NOT trace. Identify them and pull the **real vectors from an icon library — default to
+  Phosphor** (see `references/asset-extraction.md` → "Icons from a library"). Most modern UIs use a
+  standard set, so this recovers near-perfect assets from pixels.
+- **Brand logos:** fetch the official SVG; never trace.
+- Anything genuinely unknowable from pixels (hidden states, exact effect params) — omit it and note it.
 
 **Check EFFECTIVE visibility, not just `node.visible`.** A node can be `visible: true` yet not render
 because an *ancestor* is `visible: false` (e.g. an `actions` frame is hidden on one card, but its badge

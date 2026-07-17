@@ -9,6 +9,23 @@ It encodes a full method (extract → clean & inline assets → author the promp
 screenshot-compare → log deltas) plus the hard-won Figma Plugin-API gotchas that make a build land on the
 first try instead of the fifth.
 
+**Why not just share the Figma file?** If you have the file, share the file. This is for the designs you
+*can't* get a file for — a shipped product, a competitor's app, a screenshot, a URL. It turns something
+you can only look at into something you can build on: structured, editable, and re-runnable in language
+("same layout, dark mode").
+
+### Three input modes
+
+| Mode | Source | Fidelity | Tokens | Assets |
+|---|---|---|---|---|
+| **Figma** | a node/frame | **1:1** | exact (incl. variables) | real vectors via `exportAsync` |
+| **Live URL** | a shipped site/app | **near-1:1** | exact (computed CSS) | real SVGs from the DOM |
+| **Image** | screenshot / flat PNG | **approximation** | sampled/estimated | matched from an icon library |
+
+Pixels can't yield vectors — so from a screenshot the skill **identifies the icons and pulls the real
+vectors from a library** (defaults to [Phosphor](https://github.com/phosphor-icons/core)) rather than
+tracing. It states its assumptions (font, estimated spacing) up front instead of pretending to be exact.
+
 ## Two roles (important)
 
 - **Authoring** — install this skill; point it at a design; it *produces* a `PROMPT.md`. (Needs read

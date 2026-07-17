@@ -3,6 +3,65 @@
 The goal: every icon/logo/illustration becomes an **import-ready SVG** (or tiny PNG) that
 `figma.createNodeFromSvg(str)` imports cleanly, and that inlines into the PROMPT so it's self-contained.
 
+Where the assets come from depends on the extraction mode: **Figma** → `exportAsync` (below);
+**live URL** → pull inline SVGs out of the DOM (`el.outerHTML`) — real vectors, no tracing;
+**image/screenshot** → you can't extract vectors from pixels, so **match them to an icon library**.
+
+## Icons from a library (default: Phosphor)
+
+**Never trace an icon from a raster.** Most modern UIs use a standard set — identify the icon and fetch
+the real vector. **Default to [Phosphor](https://github.com/phosphor-icons/core)** (MIT, ~1,500 icons, 6
+weights, and every icon is a plain file in a public repo, so it's trivially fetchable). It's also simply
+the most common set in the wild — it was the icon set in every project this skill has been used on.
+
+**Raw URLs** (verified):
+```
+regular:              .../assets/regular/<name>.svg          e.g. arrows-clockwise.svg
+other weights:        .../assets/<weight>/<name>-<weight>.svg  e.g. fill/wallet-fill.svg
+weights:              thin · light · regular · bold · fill · duotone
+base: https://raw.githubusercontent.com/phosphor-icons/core/main
+```
+```bash
+curl -s https://raw.githubusercontent.com/phosphor-icons/core/main/assets/regular/wallet.svg
+curl -s https://raw.githubusercontent.com/phosphor-icons/core/main/assets/fill/wallet-fill.svg
+```
+Browse/search names at phosphoricons.com. Match by shape *and* weight — a filled vs regular icon reads
+very differently; zoom into the screenshot and compare stroke weight before committing.
+
+**Two mandatory fixes before use** (Phosphor's files aren't drop-in):
+1. **`fill="currentColor"` → a hardcoded hex.** Figma's SVG importer does NOT resolve `currentColor` —
+   the icon lands black or invisible. Replace it with the colour you sampled from the design.
+2. **`viewBox="0 0 256 256"` → resize.** Every Phosphor icon is 256-unit; `resize(20,20)` (or whatever
+   the design uses) after `createNodeFromSvg`.
+
+```js
+const svg = raw.replace(/currentColor/g, "#0F1319");   // sampled colour
+const node = figma.createNodeFromSvg(svg); node.resize(24, 24);
+```
+
+**Other sets** if the shapes clearly aren't Phosphor: Lucide/Feather (thin, rounded, 24-unit), Heroicons
+(Tailwind projects), Material Symbols, Radix. Same pattern: fetch the real file, hardcode the colour,
+resize. **Brand logos** (tokens, companies) — fetch the official SVG; never trace.
+
+## From a live URL (mode B)
+
+A shipped site gives you *measured* values, not guesses — treat it as nearly Figma-grade. In the browser:
+
+```js
+// exact tokens off a real element
+const s = getComputedStyle(el);
+({ color: s.color, bg: s.backgroundColor, font: s.fontFamily, size: s.fontSize,
+   weight: s.fontWeight, pad: s.padding, gap: s.gap, radius: s.borderRadius,
+   shadow: s.boxShadow, border: s.border });
+el.getBoundingClientRect();                    // real geometry
+// real vectors — no tracing
+[...document.querySelectorAll('svg')].map(s => s.outerHTML);
+```
+Notes: computed colours come back as `rgb()/rgba()` → convert to hex + opacity. Icons may be inline
+`<svg>` (grab directly), a `<use href="#id">` sprite (grab the referenced `<symbol>`), an `<img src>`
+(fetch it), or a CSS background/icon font (fall back to library matching, above). Grab the real font
+stack from `fontFamily` rather than eyeballing it.
+
 ## Getting the SVGs out of Figma
 
 Two sources, in order of preference:
