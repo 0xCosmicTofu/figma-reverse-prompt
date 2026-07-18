@@ -135,6 +135,15 @@ band from BOTH — put your reproduction's region directly beside the original's
 Differences in a repeated element (all five stat icons identical vs distinct, one count coloured) are
 invisible in isolation and obvious side by side.
 
+**Reproduce the container nesting, not just the visible leaf elements.** The easiest structural miss is
+flattening a group of elements that actually sit inside a **panel/card** — because a white panel on a
+near-white page is nearly invisible in a flat screenshot; its only cues are a **1px border** and a
+**consistent inner gutter** around the group. Before building a content region, ask "is this a flat stack,
+or are these groups wrapped in panels?" and trace the border rectangles. A telltale: leaf cards that are
+*greyer* than the page (a stat card `#F4F4F5` on a `#F7F7F8` page) usually means they sit inside a **white**
+panel — the card-in-card contrast only works with the panel present. Getting the leaf fill right but
+omitting its container still looks wrong.
+
 **Don't "upgrade" a repeated placeholder-looking element into distinct semantics.** If a row of stat cards,
 list items, or badges all carry the *same* mark in the source, that uniformity is the design — often the
 app reusing its own logo mark as a generic icon. Reproduce it as-is. Inventing five distinct semantic icons
