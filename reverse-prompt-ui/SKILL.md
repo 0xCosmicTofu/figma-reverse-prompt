@@ -130,7 +130,16 @@ have the source as a raster (mode C, or any time the original image is in the fi
 overlay**: clone the source image into a `clipsContent` frame sized to a region, offset the clone
 (`clone.x = -fx*W`), and screenshot that crop at 1.5×+. Colour differences (a branded vs light tile, a
 gray vs white card fill, an icon vs a dot) only become legible zoomed in — a mode-C build that "looked
-right" at full frame had five wrong logo-tile colours that only showed under the crop. **The Plugin-API gotchas in
+right" at full frame had five wrong logo-tile colours that only showed under the crop. **And crop the same
+band from BOTH — put your reproduction's region directly beside the original's, don't eyeball each alone.**
+Differences in a repeated element (all five stat icons identical vs distinct, one count coloured) are
+invisible in isolation and obvious side by side.
+
+**Don't "upgrade" a repeated placeholder-looking element into distinct semantics.** If a row of stat cards,
+list items, or badges all carry the *same* mark in the source, that uniformity is the design — often the
+app reusing its own logo mark as a generic icon. Reproduce it as-is. Inventing five distinct semantic icons
+(plug/check/chart/…) where the source repeats one mark is a fidelity regression, not an improvement — match
+the source, don't out-design it. **The Plugin-API gotchas in
 `references/figma-plugin-api.md` are mandatory reading before building** — they prevent the most common
 failures (the 100px-height trap, overlaps, glow-on-wrong-element).
 
