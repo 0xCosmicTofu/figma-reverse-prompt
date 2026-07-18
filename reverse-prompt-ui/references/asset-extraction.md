@@ -78,6 +78,14 @@ failures:
 **Assert before you inline:** every asset should start with `<svg` and contain no `currentColor` / `var(`.
 A three-line check catches most of the above before it reaches the build.
 
+**Logo *tiles* are usually per-brand, not uniform.** A card grid of integrations rarely puts every logo
+on the same light square. The common pattern: brands with a strong brand colour get a **solid branded
+tile with a contrasting (often white) logo** — HubSpot on orange, Slack on charcoal, Mailchimp on yellow
+— while the rest get a **light neutral tile with their own full-colour logo**. Don't default the whole
+grid to light tiles; read each tile's fill off the source and recolour the logo to contrast where the
+tile is branded. This is a colour call, so it's exactly the kind of thing a **crop-and-zoom overlay**
+(below) exists to catch.
+
 ## From a live URL (mode B)
 
 A shipped site gives you *measured* values, not guesses — treat it as nearly Figma-grade. In the browser:

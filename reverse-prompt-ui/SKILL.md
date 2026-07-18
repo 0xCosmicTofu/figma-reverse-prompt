@@ -125,7 +125,12 @@ auto-fit and reflow** — set the section's position from the frame's target and
 `frame.absoluteBoundingBox` actually landed beside the source (details + recipe in
 `references/figma-plugin-api.md` #12). This keeps every replica sitting tidily next to its original and
 never on top of existing work. Then screenshot the result and compare to the original — look hard,
-section by section. **The Plugin-API gotchas in
+section by section. **A full-frame eyeball pass is not enough for colour or per-element treatment.** If you
+have the source as a raster (mode C, or any time the original image is in the file), do a **crop-and-zoom
+overlay**: clone the source image into a `clipsContent` frame sized to a region, offset the clone
+(`clone.x = -fx*W`), and screenshot that crop at 1.5×+. Colour differences (a branded vs light tile, a
+gray vs white card fill, an icon vs a dot) only become legible zoomed in — a mode-C build that "looked
+right" at full frame had five wrong logo-tile colours that only showed under the crop. **The Plugin-API gotchas in
 `references/figma-plugin-api.md` are mandatory reading before building** — they prevent the most common
 failures (the 100px-height trap, overlaps, glow-on-wrong-element).
 
