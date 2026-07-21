@@ -135,6 +135,37 @@ band from BOTH — put your reproduction's region directly beside the original's
 Differences in a repeated element (all five stat icons identical vs distinct, one count coloured) are
 invisible in isolation and obvious side by side.
 
+**MEASURE — don't eyeball. This is the step that actually closes the gap.** Eyeballing (even zoomed) took
+four correction rounds on one mode-C screen; measuring found every delta in a single pass on the next.
+Export the source and your build **to PNG at the same canvas size** and compare numerically in a script:
+
+```python
+# longest run of an element's own fill down a column == its exact height
+def longest(a, x0,x1, y0,y1, lo,hi):      # a = grayscale array
+    best=(0,None,None)
+    for x in range(x0,x1):
+        col=a[y0:y1,x]; ok=(col>lo)&(col<hi); s=None
+        for i,v in enumerate(ok):
+            if v and s is None: s=i
+            elif not v and s is not None:
+                if i-s>best[0]: best=(i-s, y0+s, y0+i-1)
+                s=None
+    return best   # (height, top, bottom)
+```
+Run it on both images for each element whose fill differs from its parent (cards, containers, fields), and
+on text-row centres for baselines. Then fix to the numbers. It catches what no overlay shows — e.g. a
+sidebar row 2.3px too tall is invisible at full frame but compounds to ~25px of drift by the bottom of the
+list. Also report a **global score** (mean-abs-luminance match, plus a **Sobel edge-map** match — the edge
+map is what catches thin panel borders that luminance averages away) so you know when to stop.
+
+**NEVER `clone()` + `rescale()` a node that lives in the user's file.** Building an in-canvas overlay by
+cloning the source raster and rescaling the clone **corrupted the original** — it was scaled and moved,
+twice, even after being restored (the original stayed correctly parented, so it was not a stray
+`appendChild`). Do all comparison **outside Figma**: `exportAsync` both nodes to PNG and diff them in a
+script. It is more precise *and* it cannot damage the user's artwork. If you must overlay in-canvas,
+rasterise the source into a *new* image node first. If you do corrupt something, restore with explicit
+`resize()` + re-asserting the `IMAGE/FILL` fill, then **verify with a fresh screenshot**.
+
 **Reproduce the container nesting, not just the visible leaf elements.** The easiest structural miss is
 flattening a group of elements that actually sit inside a **panel/card** — because a white panel on a
 near-white page is nearly invisible in a flat screenshot; its only cues are a **1px border** and a

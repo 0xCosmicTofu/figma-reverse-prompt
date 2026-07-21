@@ -90,3 +90,28 @@ real build.
       **section** position so the frame's absolute top-left hits target: `section.x = targetX - frame.x`,
       `section.y = targetY - frame.y` (frame.x/y are its coords relative to the section). **Verify** with
       `frame.absoluteBoundingBox` afterward — don't assume.
+
+## 13. Repeating tick/ruler dividers — one LINE, not N rectangles
+
+A "ruler" divider (a row of thin vertical ticks) looks like it needs ~190 rectangles per instance. It
+doesn't. A horizontal `LINE` renders its dash pattern **along** the line while `strokeWeight` thickens it
+**across** — so short dashes on a thick line ARE vertical ticks:
+
+```js
+const d = F("ruler","HORIZONTAL");           // clipsContent, FIXED height = tick height
+d.resize(w, 10); d.clipsContent = true;
+const l = figma.createLine(); d.appendChild(l);
+l.layoutPositioning = "ABSOLUTE"; l.x = 0; l.y = 5; l.resize(d.width, 0);
+l.strokes = [{type:"SOLID", color:{r:.89,g:.89,b:.91}}];
+l.strokeWeight = 10;            // tick HEIGHT
+l.dashPattern = [1, 5];         // 1px tick every 6px
+l.constraints = {horizontal:"STRETCH", vertical:"CENTER"};
+```
+One node per ruler instead of ~190, and it reflows with the parent.
+
+## 14. Don't clone+rescale the user's nodes (see SKILL.md)
+
+`node.clone()` followed by `clone.rescale(f)` on a raster that lives in the user's file **scaled and moved
+the ORIGINAL**, reproducibly, even after restoring it. Compare outside Figma instead (`exportAsync` both
+sides to PNG, diff in a script). Restore damage with explicit `resize()` + re-asserting the `IMAGE/FILL`
+fill, then verify with a screenshot.
