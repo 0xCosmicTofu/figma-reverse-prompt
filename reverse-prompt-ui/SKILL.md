@@ -8,8 +8,11 @@ description: >-
   "capture this screen as a rebuild prompt", or points at a Figma node / screenshot and asks for a
   prompt that reproduces it. Also use to add another screen to an existing reverse-prompts project.
   Handles the whole loop: extract → clean & inline assets → author the prompt → test-build it live in
-  Figma → screenshot-compare → log deltas. Assumes a WRITE-capable Figma MCP (one that executes plugin
-  code, e.g. figma-console); the read-only official Dev-Mode MCP can't build.
+  Figma → screenshot-compare → log deltas. ALSO handles restyling a recreation — "recreate this but in
+  dark mode", "apply our brand colours to it", "re-theme this screen" — generating a new palette that is
+  WCAG-contrast-repaired and auditing the built frame node-by-node until it passes AA. Assumes a
+  WRITE-capable Figma MCP (one that executes plugin code, e.g. figma-console); the read-only official
+  Dev-Mode MCP can't build.
 ---
 
 # Reverse-prompt a UI
@@ -183,6 +186,26 @@ the source, don't out-design it. **The Plugin-API gotchas in
 `references/figma-plugin-api.md` are mandatory reading before building** — they prevent the most common
 failures (the 100px-height trap, overlaps, glow-on-wrong-element).
 
+### 4b. Optional: restyle it, with WCAG enforced
+
+Only when the user asks for a re-theme/recolour (dark mode, a brand palette) — **the faithful recreation
+comes first**. This works because the prompt already separates structure from style: swap the style layer
+and the structure holds. Full method in **`references/restyle-accessible.md`**, contrast engine in
+**`references/wcag_contrast.py`**. The three-line version:
+
+1. Make the tokens **semantic** (role-based). Beware overloaded hexes — one literal often serves several
+   roles (text vs CTA-fill vs logo chip), and a hex→hex remap cannot tell them apart.
+2. Generate the new palette, then **repair it against contrast** — move OKLCH lightness (hue preserved)
+   until each pair meets AA (4.5 text / 3.0 large & non-text). If a foreground is already at an extreme
+   and still fails, repair the **background** instead.
+3. **Audit the artifact, not the palette.** A compliant palette does NOT mean a compliant frame — on a real
+   run the palette passed 23/23 while the built frame still had 10 failing pairs (unmapped colours
+   survived; the declared pairs missed backgrounds that actually occur). Walk the real tree, resolve each
+   node's *effective background*, repair per-node, and re-audit until zero.
+
+Build the restyle on a **clone**, beside the recreation. Claim **"WCAG 2.1 AA contrast-verified"** (1.4.3 +
+1.4.11) — not "WCAG compliant"; focus order, keyboard and reflow can't be shown in a static frame.
+
 ### 5. Log deltas & register
 Write a `NOTES.md` recording: the source node ID, screen-specific content, any known deltas from the
 original (font swaps, effects the bridge can't write, simplification levels), and any *new* gotcha the
@@ -222,3 +245,5 @@ Pick the lightest structure that fits — don't build the multi-screen scaffold 
 ## References (read when relevant)
 - `references/figma-plugin-api.md` — the hard-won Plugin-API gotchas. **Read before any build.**
 - `references/asset-extraction.md` — extracting, cleaning, flattening, and simplifying assets.
+- `references/restyle-accessible.md` — restyling a recreation with WCAG enforced (step 4b).
+- `references/wcag_contrast.py` — contrast math + OKLCH repair (importable).
