@@ -193,18 +193,24 @@ comes first**. This works because the prompt already separates structure from st
 and the structure holds. Full method in **`references/restyle-accessible.md`**, contrast engine in
 **`references/wcag_contrast.py`**. The three-line version:
 
-1. Make the tokens **semantic** (role-based). Beware overloaded hexes — one literal often serves several
-   roles (text vs CTA-fill vs logo chip), and a hex→hex remap cannot tell them apart.
+1. Make the tokens **semantic** (role-based) and **bind them as Figma variables**, with each theme a
+   **mode** — see `references/figma-variables.md`. One frame + a mode toggle beats a recoloured clone:
+   no duplicated nodes, no drift. Beware overloaded hexes — one literal often serves several roles
+   (`#18181B` was text vs CTA-fill vs logo chip), so bind by node type + name + ancestry, not by hex.
 2. Generate the new palette, then **repair it against contrast** — move OKLCH lightness (hue preserved)
    until each pair meets AA (4.5 text / 3.0 large & non-text). If a foreground is already at an extreme
-   and still fails, repair the **background** instead.
-3. **Audit the artifact, not the palette.** A compliant palette does NOT mean a compliant frame — on a real
-   run the palette passed 23/23 while the built frame still had 10 failing pairs (unmapped colours
-   survived; the declared pairs missed backgrounds that actually occur). Walk the real tree, resolve each
-   node's *effective background*, repair per-node, and re-audit until zero.
+   and still fails, repair the **background** instead. Never repair a *surface* role as if it were a
+   foreground, and repair each role against its **worst-case background**.
+3. **Audit the artifact, not the palette** — and audit **every mode**. A compliant palette does NOT mean a
+   compliant frame: on a real run the palette passed 23/23 while the built frame still had 10 failing
+   pairs. Walk the real tree, resolve each node's *effective background* (following variable bindings for
+   that mode), repair, and re-audit until zero.
 
-Build the restyle on a **clone**, beside the recreation. Claim **"WCAG 2.1 AA contrast-verified"** (1.4.3 +
-1.4.11) — not "WCAG compliant"; focus order, keyboard and reflow can't be shown in a static frame.
+**Expect the faithful mode to fail AA — that's a finding, not a bug.** Real-world sources often aren't
+accessible (one had `#A9A9AE` on white = 2.34:1). Modes let you ship both: `Light` (faithful to the
+source), `Light AA` (same layout, repaired tokens), `Dark`. The diff between them *is* an accessibility
+report on the original design. Claim **"WCAG 2.1 AA contrast-verified"** (1.4.3 + 1.4.11) — not "WCAG
+compliant"; focus order, keyboard and reflow can't be shown in a static frame.
 
 ### 5. Log deltas & register
 Write a `NOTES.md` recording: the source node ID, screen-specific content, any known deltas from the
@@ -246,4 +252,5 @@ Pick the lightest structure that fits — don't build the multi-screen scaffold 
 - `references/figma-plugin-api.md` — the hard-won Plugin-API gotchas. **Read before any build.**
 - `references/asset-extraction.md` — extracting, cleaning, flattening, and simplifying assets.
 - `references/restyle-accessible.md` — restyling a recreation with WCAG enforced (step 4b).
+- `references/figma-variables.md` — themes as variables + modes (preferred restyle delivery).
 - `references/wcag_contrast.py` — contrast math + OKLCH repair (importable).

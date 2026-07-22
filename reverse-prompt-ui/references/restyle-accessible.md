@@ -79,4 +79,6 @@ There is no reference image to diff against, so the metric changes to two number
 1. **Structural identity** to the recreation — only colours moved, so geometry should be unchanged.
 2. **The audit** — `N/N` text and non-text pairs at target.
 
-Build the restyle on a **clone**, never on the original recreation, and place it beside it.
+**Preferred delivery: Figma variables + modes** (`figma-variables.md`) — one frame, roles as variables,
+each theme a mode. Only fall back to a recoloured **clone** (placed beside the recreation, never editing
+it) when variables aren't available. And audit **every mode**, resolving bindings per mode.
