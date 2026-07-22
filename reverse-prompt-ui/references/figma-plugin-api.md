@@ -109,7 +109,20 @@ l.constraints = {horizontal:"STRETCH", vertical:"CENTER"};
 ```
 One node per ruler instead of ~190, and it reflows with the parent.
 
-## 14. Don't clone+rescale the user's nodes (see SKILL.md)
+## 14. The source node is READ-ONLY. Never write to it — including "restoring" it.
+
+Treat the user's reference/source node as strictly read-only: never resize, move, rescale, or re-fill it.
+Read its properties, `exportAsync` it, clone it into a frame you own — that's all.
+
+**Do not "restore" it either.** If the source looks different from what you recorded, the overwhelmingly
+likely explanation is **the user changed it on purpose** (e.g. scaling a 2× export down to sit at the same
+scale as the builds). Silently forcing it back to "the size I remember" undoes their work and burns a tool
+call every time. If a dimension genuinely matters for your maths, **read it fresh and adapt to it** —
+never rewrite the artwork to match your assumption. If you truly believe it's damaged, say so and ask.
+
+(The original sin here: `clone()` + `rescale()` on a raster that lives in the user's file also scaled the
+ORIGINAL. That's what makes it tempting to "fix" — don't. Compare outside Figma instead: `exportAsync`
+both sides to PNG and diff in a script.)
 
 `node.clone()` followed by `clone.rescale(f)` on a raster that lives in the user's file **scaled and moved
 the ORIGINAL**, reproducibly, even after restoring it. Compare outside Figma instead (`exportAsync` both
